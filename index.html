@@ -137,7 +137,6 @@
             addMessage(response);
         };
 
-        // File Uploader Logic
         document.getElementById('fileUpload').addEventListener('change', (e) => {
             Array.from(e.target.files).forEach(file => {
                 const reader = new FileReader();
@@ -218,12 +217,15 @@
             if (showAnatomy && anatomyLabels.length === 0) {
                 const file = uploadedFiles.find(f => f.id === activeFileId);
                 addMessage("Detecting structures...", "user");
-                const prompt = "Label bones, tissues, organs in this scan. Return JSON: [{name, x, y, w, h}] (coordinates 0-1000).";
+                const prompt = "Label bones, tissues, organs in this scan. Return JSON array ONLY: [{name, x, y, w, h}] (coordinates 0-1000).";
                 const response = await callGemini(prompt, file);
                 try {
-                    const cleanJson = response.replace(/```json|```/g, "").trim();
-                    anatomyLabels = JSON.parse(cleanJson);
-                } catch(e) { addMessage("Parsing failed."); }
+                    // Robust extraction: find first '[' and last ']'
+                    const start = response.indexOf('[');
+                    const end = response.lastIndexOf(']');
+                    if (start === -1 || end === -1) throw new Error("No JSON found");
+                    anatomyLabels = JSON.parse(response.substring(start, end + 1));
+                } catch(e) { addMessage("Parsing failed. AI returned non-JSON format."); console.error(e); }
             }
             draw();
         };
