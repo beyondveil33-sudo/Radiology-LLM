@@ -60,6 +60,7 @@
         <aside class="sidebar-left">
             <div class="sidebar-header">
                 <span>Patient Documents</span>
+                <!-- Ensure file input is accessible to the script -->
                 <input type="file" id="fileUpload" multiple accept=".pdf, image/jpeg, image/png, image/jpg" style="display: none;">
                 <button class="upload-btn" onclick="document.getElementById('fileUpload').click()">+ Upload</button>
             </div>
@@ -104,6 +105,7 @@
         const viewerContainer = document.getElementById('viewerContainer');
         const chatHistory = document.getElementById('chatHistory');
         const chatInput = document.getElementById('chatInput');
+        const fileUpload = document.getElementById('fileUpload');
         
         function addMessage(text, type = 'model') {
             const div = document.createElement('div');
@@ -137,7 +139,9 @@
             addMessage(response);
         };
 
-        document.getElementById('fileUpload').addEventListener('change', (e) => {
+        // Explicit event listener initialization
+        fileUpload.onchange = (e) => {
+            if (!e.target.files.length) return;
             Array.from(e.target.files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (event) => {
@@ -147,7 +151,9 @@
                 };
                 reader.readAsDataURL(file);
             });
-        });
+            // Reset input value to allow re-uploading the same file if needed
+            fileUpload.value = '';
+        };
 
         function renderFileList() {
             const fileList = document.getElementById('fileList');
@@ -157,7 +163,7 @@
                 li.className = `file-item ${file.id === activeFileId ? 'active' : ''}`;
                 li.innerHTML = `<span class="file-info">${file.name}</span><button class="delete-btn">&times;</button>`;
                 li.querySelector('.file-info').onclick = () => selectFile(file.id);
-                li.querySelector('.delete-btn').onclick = () => deleteFile(file.id);
+                li.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deleteFile(file.id); };
                 fileList.appendChild(li);
             });
         }
@@ -220,7 +226,6 @@
                 const prompt = "Label bones, tissues, organs in this scan. Return JSON array ONLY: [{name, x, y, w, h}] (coordinates 0-1000).";
                 const response = await callGemini(prompt, file);
                 try {
-                    // Robust extraction: find first '[' and last ']'
                     const start = response.indexOf('[');
                     const end = response.lastIndexOf(']');
                     if (start === -1 || end === -1) throw new Error("No JSON found");
