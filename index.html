@@ -16,199 +16,129 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: var(--font-serif); background-color: var(--arxiv-bg); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        body { font-family: var(--font-serif); background-color: var(--arxiv-bg); color: var(--text-main); height: 100vh; overflow: hidden; }
 
-        header { background-color: #ffffff; border-bottom: 2px solid var(--arxiv-red); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; height: 60px; flex-shrink: 0; }
-        .logo { font-size: 24px; font-weight: bold; color: var(--arxiv-red); display: flex; align-items: center; gap: 10px; }
-        .logo span { font-size: 14px; font-weight: normal; color: var(--text-muted); border-left: 1px solid var(--text-muted); padding-left: 10px; }
+        header { background-color: #ffffff; border-bottom: 2px solid var(--arxiv-red); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; height: 60px; }
+        .logo { font-size: 18px; font-weight: bold; color: var(--arxiv-red); }
+        .logo span { display: none; } /* Hide subtext on mobile */
 
-        .app-container { display: flex; flex: 1; height: calc(100vh - 60px); }
-        .sidebar-left { width: 280px; background-color: #ffffff; border-right: 1px solid var(--arxiv-border); display: flex; flex-direction: column; }
-        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--arxiv-border); background-color: #f1f1f1; font-weight: bold; font-family: var(--font-sans); font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
-        .upload-btn { background-color: var(--arxiv-red); color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: var(--font-sans); }
+        .app-container { display: flex; flex-direction: column; height: calc(100vh - 60px); }
+
+        /* Responsive Layout: Stacked on mobile, side-by-side on desktop */
+        @media (min-width: 768px) {
+            .app-container { flex-direction: row; }
+            .logo span { display: inline; font-size: 14px; color: var(--text-muted); padding-left: 10px; }
+        }
+
+        .sidebar-left { width: 100%; height: 200px; background-color: #ffffff; border-bottom: 1px solid var(--arxiv-border); display: flex; flex-direction: column; }
+        @media (min-width: 768px) { .sidebar-left { width: 280px; height: 100%; border-bottom: none; border-right: 1px solid var(--arxiv-border); } }
+
+        .sidebar-header { padding: 12px; border-bottom: 1px solid var(--arxiv-border); background-color: #f1f1f1; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .upload-btn { background-color: var(--arxiv-red); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
         
         .file-list { list-style: none; overflow-y: auto; flex: 1; }
-        .file-item { padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; font-family: var(--font-sans); font-size: 13px; }
-        .file-info { cursor: pointer; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .file-item.active { background-color: #e9ecef; border-left: 4px solid var(--arxiv-red); }
-        .delete-btn { background: none; border: none; cursor: pointer; padding: 5px; font-size: 16px; color: #999; }
-
-        .center-viewer { flex: 1; background-color: #e4e4e4; display: flex; flex-direction: column; padding: 20px; overflow: hidden; }
-        .llm-actions { padding: 10px; display: flex; gap: 5px; border-bottom: 1px solid var(--arxiv-border); background: #fff; }
-        .llm-btn { background-color: #f0f0f0; border: 1px solid #ccc; padding: 5px 10px; cursor: pointer; font-size: 12px; border-radius: 4px; }
+        .file-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
         
-        .viewer-container { background-color: #ffffff; flex: 1; border: 1px solid var(--arxiv-border); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: crosshair; }
-        #canvas { width: 100%; height: 100%; object-fit: contain; }
-
-        .sidebar-right { width: 380px; background-color: #ffffff; border-left: 1px solid var(--arxiv-border); display: flex; flex-direction: column; }
-        .chat-history { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; font-family: var(--font-sans); font-size: 14px; background-color: #fafafa; }
-        .message { max-width: 85%; padding: 10px 14px; border-radius: 8px; line-height: 1.5; }
-        .message.user { align-self: flex-end; background-color: #e3f2fd; color: #0d47a1; }
-        .message.model { align-self: flex-start; background-color: #ffffff; border: 1px solid var(--arxiv-border); }
-        .chat-input-area { padding: 15px; border-top: 1px solid var(--arxiv-border); display: flex; flex-direction: column; gap: 10px; }
-        textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--arxiv-border); border-radius: 4px; resize: none; }
-        .send-btn { background-color: var(--arxiv-red); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; }
+        .center-viewer { flex: 1; background-color: #e4e4e4; display: flex; flex-direction: column; padding: 10px; overflow: hidden; }
+        .viewer-container { background-color: #ffffff; flex: 1; border: 1px solid var(--arxiv-border); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        
+        .sidebar-right { width: 100%; flex: 1; background-color: #ffffff; border-top: 1px solid var(--arxiv-border); display: flex; flex-direction: column; }
+        @media (min-width: 768px) { .sidebar-right { width: 350px; border-top: none; border-left: 1px solid var(--arxiv-border); } }
+        
+        .chat-history { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+        .message { max-width: 90%; padding: 10px; border-radius: 8px; }
+        .chat-input-area { padding: 10px; border-top: 1px solid var(--arxiv-border); display: flex; gap: 5px; }
+        textarea { flex: 1; height: 45px; padding: 8px; border: 1px solid var(--arxiv-border); border-radius: 4px; }
+        .send-btn { background-color: var(--arxiv-red); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">arXiv.rad <span>Radiology Expert LLM System</span></div>
+        <div class="logo">arXiv.rad <span>Radiology Expert</span></div>
     </header>
 
     <div class="app-container">
         <aside class="sidebar-left">
             <div class="sidebar-header">
-                <span>Patient Documents</span>
-                <input type="file" id="fileUpload" multiple accept=".pdf, image/jpeg, image/png, image/jpg" style="display: none;">
-                <button class="upload-btn" onclick="document.getElementById('fileUpload').click()">+ Upload</button>
+                <span>Documents</span>
+                <input type="file" id="fileUpload" multiple accept=".pdf, image/*" style="display: none;">
+                <button class="upload-btn" onclick="document.getElementById('fileUpload').click()">Upload</button>
             </div>
             <ul class="file-list" id="fileList"></ul>
         </aside>
 
         <main class="center-viewer">
-            <div class="llm-actions">
-                <button class="llm-btn" id="analyzeBtn" style="display:none;">✨ Analyze Scan</button>
-                <button class="llm-btn" id="summarizeBtn" style="display:none;">✨ Summarize Report</button>
-            </div>
             <div class="viewer-container" id="viewerContainer">
-                <div id="viewPlaceholder">No document selected</div>
+                <div id="viewPlaceholder">Select a document</div>
                 <canvas id="canvas" style="display:none;"></canvas>
             </div>
         </main>
 
         <aside class="sidebar-right">
             <div class="chat-history" id="chatHistory">
-                <div class="message model">Welcome. Select a document to start analysis.</div>
+                <div class="message">Select a document to begin.</div>
             </div>
             <div class="chat-input-area">
-                <textarea id="chatInput"></textarea>
-                <button class="send-btn" id="sendBtn">Send Message</button>
+                <textarea id="chatInput" placeholder="Message..."></textarea>
+                <button class="send-btn" id="sendBtn">Send</button>
             </div>
         </aside>
     </div>
 
     <script>
-        const API_KEY = "";
-        const MODEL_NAME = "gemini-2.0-flash";
         let uploadedFiles = [];
         let activeFileId = null;
-        let scale = 1, offsetX = 0, offsetY = 0;
 
+        const fileUpload = document.getElementById('fileUpload');
         const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
         const viewerContainer = document.getElementById('viewerContainer');
         const chatHistory = document.getElementById('chatHistory');
         const chatInput = document.getElementById('chatInput');
-        const fileUpload = document.getElementById('fileUpload');
-        
-        function addMessage(text, type = 'model') {
-            const div = document.createElement('div');
-            div.className = `message ${type}`;
-            div.textContent = text;
-            chatHistory.appendChild(div);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-        }
-
-        async function callGemini(prompt, file = null) {
-            try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-                const fullPrompt = prompt + ". Please explain in very simple layman's terms.";
-                const contents = { parts: [{ text: fullPrompt }] };
-                if (file && file.type.startsWith('image/')) {
-                    contents.parts.push({ inline_data: { mime_type: file.type, data: file.base64 } });
-                }
-                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [contents] }) });
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text;
-            } catch (err) { return "Error: API call failed."; }
-        }
-
-        document.getElementById('sendBtn').onclick = async () => {
-            const text = chatInput.value.trim();
-            if (!text) return;
-            addMessage(text, 'user');
-            chatInput.value = '';
-            const file = uploadedFiles.find(f => f.id === activeFileId);
-            const response = await callGemini(text, file);
-            addMessage(response);
-        };
 
         fileUpload.onchange = (e) => {
-            if (!e.target.files.length) return;
             Array.from(e.target.files).forEach(file => {
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    const id = Date.now() + Math.random();
-                    uploadedFiles.push({ id, name: file.name, type: file.type, dataUrl: event.target.result, base64: event.target.result.split(',')[1] });
+                reader.onload = (ev) => {
+                    uploadedFiles.push({ id: Date.now(), name: file.name, type: file.type, dataUrl: ev.target.result });
                     renderFileList();
                 };
                 reader.readAsDataURL(file);
             });
-            fileUpload.value = '';
         };
 
         function renderFileList() {
-            const fileList = document.getElementById('fileList');
-            fileList.innerHTML = '';
-            uploadedFiles.forEach(file => {
-                const li = document.createElement('li');
-                li.className = `file-item ${file.id === activeFileId ? 'active' : ''}`;
-                li.innerHTML = `<span class="file-info">${file.name}</span><button class="delete-btn">&times;</button>`;
-                li.querySelector('.file-info').onclick = () => selectFile(file.id);
-                li.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deleteFile(file.id); };
-                fileList.appendChild(li);
-            });
-        }
-
-        function deleteFile(id) {
-            uploadedFiles = uploadedFiles.filter(f => f.id !== id);
-            if (activeFileId === id) {
-                activeFileId = null;
-                viewerContainer.innerHTML = '<div id="viewPlaceholder">No document selected</div>';
-                document.getElementById('analyzeBtn').style.display = 'none';
-                document.getElementById('summarizeBtn').style.display = 'none';
-            }
-            renderFileList();
-        }
-
-        function draw() {
-            const file = uploadedFiles.find(f => f.id === activeFileId);
-            if (!file) return;
-            const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.save();
-                ctx.translate(offsetX, offsetY);
-                ctx.scale(scale, scale);
-                ctx.drawImage(img, 0, 0);
-                ctx.restore();
-            };
-            img.src = file.dataUrl;
+            const list = document.getElementById('fileList');
+            list.innerHTML = uploadedFiles.map(f => `
+                <li class="file-item" onclick="selectFile(${f.id})">
+                    ${f.name}
+                </li>`).join('');
         }
 
         function selectFile(id) {
             activeFileId = id;
-            renderFileList();
             const file = uploadedFiles.find(f => f.id === id);
             viewerContainer.innerHTML = '';
             if (file.type.startsWith('image/')) {
-                viewerContainer.appendChild(canvas);
-                canvas.style.display = 'block';
-                draw();
-                document.getElementById('analyzeBtn').style.display = 'block';
-                document.getElementById('summarizeBtn').style.display = 'none';
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    canvas.style.display = 'block';
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    viewerContainer.appendChild(canvas);
+                };
+                img.src = file.dataUrl;
             } else {
-                const embed = document.createElement('embed');
-                embed.src = file.dataUrl;
-                embed.style.width = '100%'; embed.style.height = '100%';
-                viewerContainer.appendChild(embed);
-                document.getElementById('analyzeBtn').style.display = 'none';
-                document.getElementById('summarizeBtn').style.display = 'block';
+                viewerContainer.innerHTML = `<embed src="${file.dataUrl}" style="width:100%;height:100%">`;
             }
         }
+
+        document.getElementById('sendBtn').onclick = () => {
+            if (!chatInput.value.trim()) return;
+            chatHistory.innerHTML += `<div class="message" style="background:#e3f2fd;align-self:flex-end">${chatInput.value}</div>`;
+            chatInput.value = '';
+        };
     </script>
 </body>
 </html>
