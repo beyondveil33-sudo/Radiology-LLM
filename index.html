@@ -137,6 +137,44 @@
             addMessage(response);
         };
 
+        // File Uploader Logic
+        document.getElementById('fileUpload').addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const id = Date.now() + Math.random();
+                    uploadedFiles.push({ id, name: file.name, type: file.type, dataUrl: event.target.result, base64: event.target.result.split(',')[1] });
+                    renderFileList();
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function renderFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            uploadedFiles.forEach(file => {
+                const li = document.createElement('li');
+                li.className = `file-item ${file.id === activeFileId ? 'active' : ''}`;
+                li.innerHTML = `<span class="file-info">${file.name}</span><button class="delete-btn">&times;</button>`;
+                li.querySelector('.file-info').onclick = () => selectFile(file.id);
+                li.querySelector('.delete-btn').onclick = () => deleteFile(file.id);
+                fileList.appendChild(li);
+            });
+        }
+
+        function deleteFile(id) {
+            uploadedFiles = uploadedFiles.filter(f => f.id !== id);
+            if (activeFileId === id) {
+                activeFileId = null;
+                viewerContainer.innerHTML = '<div id="viewPlaceholder">No document selected</div>';
+                document.getElementById('analyzeBtn').style.display = 'none';
+                document.getElementById('summarizeBtn').style.display = 'none';
+                document.getElementById('anatomyBtn').style.display = 'none';
+            }
+            renderFileList();
+        }
+
         function draw() {
             const file = uploadedFiles.find(f => f.id === activeFileId);
             if (!file) return;
@@ -149,7 +187,6 @@
                 ctx.translate(offsetX, offsetY);
                 ctx.scale(scale, scale);
                 ctx.drawImage(img, 0, 0);
-                
                 if (showAnatomy) {
                     anatomyLabels.forEach(label => {
                         ctx.strokeStyle = (hoveredLabel === label) ? 'cyan' : 'yellow';
@@ -172,7 +209,6 @@
             const rect = canvas.getBoundingClientRect();
             const x = (e.clientX - rect.left) / (rect.width / canvas.width);
             const y = (e.clientY - rect.top) / (rect.height / canvas.height);
-            
             const found = anatomyLabels.find(l => x >= l.x && x <= l.x + l.w && y >= l.y && y <= l.y + l.h);
             if (found !== hoveredLabel) { hoveredLabel = found; draw(); }
         };
@@ -192,7 +228,30 @@
             draw();
         };
 
-        // ... (Include file upload, selectFile, and renderFileList functions as before)
+        function selectFile(id) {
+            activeFileId = id;
+            showAnatomy = false;
+            anatomyLabels = [];
+            renderFileList();
+            const file = uploadedFiles.find(f => f.id === id);
+            viewerContainer.innerHTML = '';
+            if (file.type.startsWith('image/')) {
+                viewerContainer.appendChild(canvas);
+                canvas.style.display = 'block';
+                draw();
+                document.getElementById('analyzeBtn').style.display = 'block';
+                document.getElementById('anatomyBtn').style.display = 'block';
+                document.getElementById('summarizeBtn').style.display = 'none';
+            } else {
+                const embed = document.createElement('embed');
+                embed.src = file.dataUrl;
+                embed.style.width = '100%'; embed.style.height = '100%';
+                viewerContainer.appendChild(embed);
+                document.getElementById('analyzeBtn').style.display = 'none';
+                document.getElementById('anatomyBtn').style.display = 'none';
+                document.getElementById('summarizeBtn').style.display = 'block';
+            }
+        }
     </script>
 </body>
 </html>
