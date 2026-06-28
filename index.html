@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>arXiv Radiology Notebook</title>
+    <style>
+        :root {
+            --arxiv-red: #b31b1b;
+            --arxiv-bg: #f9f9f9;
+            --arxiv-border: #cccccc;
+            --text-main: #000000;
+            --text-muted: #555555;
+            --font-serif: "Times New Roman", Times, serif;
+            --font-sans: Arial, Helvetica, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-serif); background-color: var(--arxiv-bg); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        header { background-color: #ffffff; border-bottom: 2px solid var(--arxiv-red); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; height: 60px; flex-shrink: 0; }
+        .logo { font-size: 24px; font-weight: bold; color: var(--arxiv-red); display: flex; align-items: center; gap: 10px; }
+        .logo span { font-size: 14px; font-weight: normal; color: var(--text-muted); border-left: 1px solid var(--text-muted); padding-left: 10px; }
+
+        .app-container { display: flex; flex: 1; height: calc(100vh - 60px); }
+        .sidebar-left { width: 280px; background-color: #ffffff; border-right: 1px solid var(--arxiv-border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 15px; border-bottom: 1px solid var(--arxiv-border); background-color: #f1f1f1; font-weight: bold; font-family: var(--font-sans); font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .upload-btn { background-color: var(--arxiv-red); color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: var(--font-sans); }
+        
+        .file-list { list-style: none; overflow-y: auto; flex: 1; }
+        .file-item { padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; font-family: var(--font-sans); font-size: 13px; }
+        .file-info { cursor: pointer; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-item.active { background-color: #e9ecef; border-left: 4px solid var(--arxiv-red); }
+        .delete-btn { background: none; border: none; cursor: pointer; padding: 5px; font-size: 16px; color: #999; }
+
+        .center-viewer { flex: 1; background-color: #e4e4e4; display: flex; flex-direction: column; padding: 20px; overflow: hidden; }
+        .llm-actions { padding: 10px; display: flex; gap: 5px; border-bottom: 1px solid var(--arxiv-border); background: #fff; }
+        .llm-btn { background-color: #f0f0f0; border: 1px solid #ccc; padding: 5px 10px; cursor: pointer; font-size: 12px; border-radius: 4px; }
+        
+        /* Updated viewer container to ensure canvas takes full space */
+        .viewer-container { background-color: #ffffff; flex: 1; border: 1px solid var(--arxiv-border); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; cursor: crosshair; }
+        #canvas { width: 100%; height: 100%; object-fit: contain; }
+
+        .sidebar-right { width: 380px; background-color: #ffffff; border-left: 1px solid var(--arxiv-border); display: flex; flex-direction: column; }
+        .chat-history { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; font-family: var(--font-sans); font-size: 14px; background-color: #fafafa; }
+        .message { max-width: 85%; padding: 10px 14px; border-radius: 8px; line-height: 1.5; }
+        .message.user { align-self: flex-end; background-color: #e3f2fd; color: #0d47a1; }
+        .message.model { align-self: flex-start; background-color: #ffffff; border: 1px solid var(--arxiv-border); }
+        .chat-input-area { padding: 15px; border-top: 1px solid var(--arxiv-border); display: flex; flex-direction: column; gap: 10px; }
+        textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--arxiv-border); border-radius: 4px; resize: none; }
+        .send-btn { background-color: var(--arxiv-red); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">arXiv.rad <span>Radiology Expert LLM System</span></div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar-left">
+            <div class="sidebar-header">
+                <span>Patient Documents</span>
+                <input type="file" id="fileUpload" multiple accept=".pdf, image/jpeg, image/png, image/jpg" style="display: none;">
+                <button class="upload-btn" onclick="document.getElementById('fileUpload').click()">+ Upload</button>
+            </div>
+            <ul class="file-list" id="fileList"></ul>
+        </aside>
+
+        <main class="center-viewer">
+            <div class="llm-actions">
+                <button class="llm-btn" id="analyzeBtn" style="display:none;">✨ Analyze Scan</button>
+                <button class="llm-btn" id="summarizeBtn" style="display:none;">✨ Summarize Report</button>
+                <button class="llm-btn" id="anatomyBtn" style="display:none;">🦴 Anatomy Toggle</button>
+            </div>
+            <div class="viewer-container" id="viewerContainer">
+                <div id="viewPlaceholder">No document selected</div>
+                <canvas id="canvas" style="display:none;"></canvas>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="chat-history" id="chatHistory">
+                <div class="message model">Welcome. Select a document to start analysis.</div>
+            </div>
+            <div class="chat-input-area">
+                <textarea id="chatInput"></textarea>
+                <button class="send-btn" id="sendBtn">Send Message</button>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const API_KEY = "";
+        const MODEL_NAME = "gemini-2.0-flash";
+        let uploadedFiles = [];
+        let activeFileId = null;
+        let scale = 1, offsetX = 0, offsetY = 0;
+        let showAnatomy = false;
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const viewerContainer = document.getElementById('viewerContainer');
+        const chatHistory = document.getElementById('chatHistory');
+        const chatInput = document.getElementById('chatInput');
+        
+        function addMessage(text, type = 'model') {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.textContent = text;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        async function callGemini(prompt, file = null) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+                const contents = { parts: [{ text: prompt }] };
+                if (file && file.type.startsWith('image/')) {
+                    contents.parts.push({ inline_data: { mime_type: file.type, data: file.base64 } });
+                }
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [contents] }) });
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (err) { return "Error: API call failed."; }
+        }
+
+        document.getElementById('sendBtn').onclick = async () => {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            addMessage(text, 'user');
+            chatInput.value = '';
+            const file = uploadedFiles.find(f => f.id === activeFileId);
+            const response = await callGemini(text, file);
+            addMessage(response);
+        };
+
+        document.getElementById('fileUpload').addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const id = Date.now() + Math.random();
+                    uploadedFiles.push({ id, name: file.name, type: file.type, dataUrl: event.target.result, base64: event.target.result.split(',')[1] });
+                    renderFileList();
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function renderFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            uploadedFiles.forEach(file => {
+                const li = document.createElement('li');
+                li.className = `file-item ${file.id === activeFileId ? 'active' : ''}`;
+                li.innerHTML = `<span class="file-info">${file.name}</span><button class="delete-btn">&times;</button>`;
+                li.querySelector('.file-info').onclick = () => selectFile(file.id);
+                li.querySelector('.delete-btn').onclick = () => deleteFile(file.id);
+                fileList.appendChild(li);
+            });
+        }
+
+        function deleteFile(id) {
+            uploadedFiles = uploadedFiles.filter(f => f.id !== id);
+            if (activeFileId === id) {
+                activeFileId = null;
+                viewerContainer.innerHTML = '<div id="viewPlaceholder">No document selected</div>';
+                document.getElementById('analyzeBtn').style.display = 'none';
+                document.getElementById('summarizeBtn').style.display = 'none';
+                document.getElementById('anatomyBtn').style.display = 'none';
+            }
+            renderFileList();
+        }
+
+        function draw() {
+            const file = uploadedFiles.find(f => f.id === activeFileId);
+            if (!file) return;
+            const img = new Image();
+            img.onload = () => {
+                // Ensure canvas reflects the image's natural size for high quality
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.translate(offsetX, offsetY);
+                ctx.scale(scale, scale);
+                ctx.drawImage(img, 0, 0);
+                if (showAnatomy) {
+                    ctx.strokeStyle = 'yellow'; ctx.fillStyle = 'yellow'; ctx.lineWidth = 5;
+                    ctx.strokeRect(img.width/4, img.height/4, img.width/2, img.height/2);
+                    ctx.font = '40px Arial';
+                    ctx.fillText("Region of Interest", img.width/4, img.height/4 - 20);
+                }
+                ctx.restore();
+            };
+            img.src = file.dataUrl;
+        }
+
+        canvas.onwheel = (e) => { e.preventDefault(); scale += e.deltaY * -0.001; scale = Math.min(Math.max(.5, scale), 4); draw(); };
+        document.getElementById('anatomyBtn').onclick = () => { showAnatomy = !showAnatomy; draw(); };
+
+        function selectFile(id) {
+            activeFileId = id;
+            renderFileList();
+            const file = uploadedFiles.find(f => f.id === id);
+            viewerContainer.innerHTML = '';
+            
+            if (file.type.startsWith('image/')) {
+                viewerContainer.appendChild(canvas);
+                canvas.style.display = 'block';
+                draw();
+                document.getElementById('analyzeBtn').style.display = 'block';
+                document.getElementById('anatomyBtn').style.display = 'block';
+                document.getElementById('summarizeBtn').style.display = 'none';
+            } else {
+                const embed = document.createElement('embed');
+                embed.src = file.dataUrl;
+                embed.style.width = '100%'; embed.style.height = '100%';
+                viewerContainer.appendChild(embed);
+                document.getElementById('analyzeBtn').style.display = 'none';
+                document.getElementById('anatomyBtn').style.display = 'none';
+                document.getElementById('summarizeBtn').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
